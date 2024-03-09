@@ -1,5 +1,5 @@
 # Introduction
-This repository builds upon the innovative work of [icefall](https://github.com/k2-fsa/icefall), integrating and extending its features to provide a convenient and controllable framework for model training and testing. The base line code use [Zipformer](https://arxiv.org/abs/2310.11230) with Eden scheduler and ScaledAdam optimizer. Feel free to customize the provided [configuration file](D:\DeepLearning\Zipformer_Lightning\egs\librispeech\configs\zipformer.yaml) and [layer](D:\DeepLearning\Zipformer_Lightning\zipformer_lightning\layers) modules to suit your specific model and training requirements.
+This repository builds upon the incredible work of [icefall](https://github.com/k2-fsa/icefall), integrating and extending its features to provide a convenient and controllable framework for model training and testing. The base line code use [Zipformer](https://arxiv.org/abs/2310.11230) with Eden scheduler and ScaledAdam optimizer. Feel free to customize the provided [configuration file](D:\DeepLearning\Zipformer_Lightning\egs\librispeech\configs\zipformer.yaml) and [layer](D:\DeepLearning\Zipformer_Lightning\zipformer_lightning\layers) modules to suit your specific model and training requirements.
 
 # How to use
 ## Installation
