@@ -8,7 +8,7 @@ Step 1: Install this repo
 git clone https://github.com/ZQuang2202/Zipformer_Lightning.git
 cd Zipformer_Lightning
 ```
-Step 1: Create environment
+Step 2: Create environment
 ```bash
 conda create -n zipformer_lightning python=3.10
 export CUDA_HOME=/usr/local/cuda
@@ -38,12 +38,12 @@ export CMAKE_CUDA_ARCHITECTURES=75
 
 pip install -r requirements.txt
 ```
-Step 2: Install Warp RNNT
+Step 3: Install Warp RNNT
 
 ```bash
 bash scripts/install_rnnt.sh
 ```
-Step 3: Install the repo to an editable package
+Step 4: Install the repo to an editable package
 ```bash
 pip install -e .
 ```
