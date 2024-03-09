@@ -3,7 +3,11 @@ This repository builds upon the innovative work of [icefall](https://github.com/
 
 # How to use
 ## Installation
-
+Step 1: Install this repo
+```bash
+git clone https://github.com/ZQuang2202/Zipformer_Lightning.git
+cd Zipformer_Lightning
+```
 Step 1: Create environment
 ```bash
 conda create -n zipformer_lightning python=3.10
