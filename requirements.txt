@@ -1,0 +1,14 @@
+torch
+torchaudio
+tensorboard
+sentencepiece
+lhotse
+kaldiio
+torch_complex
+typeguard==2.13.3
+lightning
+hyperpyyaml
+cmake
+jiwer
+kaldialign
+# fast_rnnt

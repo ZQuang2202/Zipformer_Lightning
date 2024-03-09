@@ -1,0 +1,185 @@
+egs_name: zipformer
+version: 1
+resume_path: null
+
+text_extractor: !new:humming.features.text_extractor.SentencePiece
+  vocab_path: #path to vocab file
+
+fbank_config: !new:lhotse.FbankConfig
+  num_mel_bins: 80
+
+fbank: !new:lhotse.Fbank
+  config: !ref <fbank_config>
+
+audio_extractor: !new:lhotse.dataset.OnTheFlyFeatures
+  extractor: !ref <fbank>
+  num_workers: 6
+
+# audio_extractor: !new:lhotse.dataset.PrecomputedFeatures
+#   num_workers: 6
+# musan_noise: !new:lhotse.dataset.CutMix
+
+perturb_speed: !new:lhotse.dataset.PerturbSpeed
+  factors: [0.7, 0.8, 0.9, 1.1, 1.2, 1.3]
+  p: 0.6
+
+perturb_volume: !new:lhotse.dataset.PerturbVolume
+  scale_low: 0.7
+  scale_high: 1.25
+  p: 0.3
+
+spec_aug: !new:lhotse.dataset.SpecAugment
+  time_warp_factor: 80
+  num_feature_masks: 2
+  features_mask_size: 27
+  num_frame_masks: 10
+  frames_mask_size: 100
+  max_frames_mask_fraction: 0.15
+  p: 0.9
+
+train_dataset: !new:humming.dataset.asr_datamodule.ASRDataset
+  data_path: #path to train_dataset in lhotse style
+  enable_musan: False
+  audio_extractor: !ref <audio_extractor>
+  text_extractor: !ref <text_extractor>
+  audio_augmentor:
+    - !ref <perturb_speed>
+    - !ref <perturb_volume>
+  feature_augmentor:
+    - !ref <spec_aug>
+  sample_rate: 16000
+
+valid_dataset: !new:humming.dataset.asr_datamodule.ASRDataset
+  data_path: #path to train_dataset in lhotse style
+  audio_extractor: !ref <audio_extractor>
+  text_extractor: !ref <text_extractor>
+  sample_rate: 16000
+
+test_dataset: !new:humming.dataset.asr_datamodule.ASRDataset
+  data_path: #path to train_dataset in lhotse style
+  audio_extractor: !ref <audio_extractor>
+  text_extractor: !ref <text_extractor>
+  sample_rate: 16000
+
+datamodule: !new:humming.dataset.dataloader_module.Datamodule
+  train_dataset: !ref <train_dataset>
+  valid_dataset: !ref <valid_dataset>
+  test_dataset: !ref <test_dataset>
+  max_duration: 150
+  num_buckets: 30
+  shuffle: True
+  buffer_size: 10000
+  shuffle_buffer_size: 100000
+  seed: 42
+  prefetch_factor: 2
+  num_workers: 2
+  use_bucket: True
+
+
+encoder_embed: !new:humming.layers.subsampling.Conv2dSubsampling
+  in_channels: 80
+  out_channels: 192
+  dropout: null
+
+encoder: !new:humming.layers.zipformer.Zipformer2
+  output_downsampling_factor: 2
+  downsampling_factor: (1,2,4,8,4,2)
+  encoder_dim: (192,256,384,512,384,256)
+  num_encoder_layers: (2,2,3,4,3,2)
+  encoder_unmasked_dim: (192,192,256,256,256,192)
+  query_head_dim: 32
+  pos_head_dim: 4
+  value_head_dim: 12
+  num_heads: (4,4,4,8,4,4)
+  feedforward_dim: (512,768,1024,1536,1024,768)
+  cnn_module_kernel: (31,31,15,15,15,31)
+  pos_dim: 48
+  dropout: null
+  warmup_batches: 2000
+  causal: True
+  chunk_size: (16,32,64,-1)
+  left_context_frames: (64,128,256,-1)
+
+decoder: !new:humming.layers.decoder.Decoder
+  blank_id: 0
+  vocab_size: !ref <text_extractor.vocab_size>
+  decoder_dim: 512
+  context_size: 2
+
+jointer: !new:humming.layers.jointer.Jointer
+  encoder_dim: 512
+  decoder_dim: 512
+  jointer_dim: 512
+  vocab_size: !ref <decoder.vocab_size>
+
+model: !new:humming.models.rnnt.RNNT
+  encoder_embed: !ref <encoder_embed>
+  encoder: !ref <encoder>
+  decoder: !ref <decoder>
+  jointer: !ref <jointer>
+  text_extractor: !ref <text_extractor>
+  freeze_encoder: False
+  freeze_decoder: False
+  base_lr: 0.006
+  lr_epochs: 18
+  lr_batches: 7500
+  optim_warmup_steps: 500
+  decode_chunk_size: 16
+  left_context: 128
+  prune_range: 10
+  max_duration: 150.0
+  world_size: 1
+
+tb_logger: !new:lightning.pytorch.loggers.TensorBoardLogger
+  save_dir: .
+  name: !ref <egs_name>
+  version: !ref <version>
+
+csv_logger: !new:lightning.pytorch.loggers.CSVLogger
+  save_dir: .
+  name: !ref <egs_name>
+  version: !ref <version>
+  flush_logs_every_n_steps: 100
+
+checkpoint_callback: !new:lightning.pytorch.callbacks.ModelCheckpoint
+  save_top_k: 3
+  monitor: avg_valid_loss
+
+process_bar: !new:humming.utils.process_bar.LitProgressBar
+
+simple_profiler: !new:lightning.pytorch.profilers.SimpleProfiler
+  dirpath: !ref <egs_name>
+  filename: simple_perf_logs
+
+advanced_profiler: !new:lightning.pytorch.profilers.AdvancedProfiler
+  dirpath: !ref <egs_name>
+  filename: advanced_perf_logs
+
+pytorch_profiler: !new:lightning.pytorch.profilers.PyTorchProfiler
+  dirpath: !ref <egs_name>
+  filename: pytorch_perf_logs
+
+strategy: !new:lightning.pytorch.strategies.ddp.DDPStrategy
+  find_unused_parameters: True
+
+trainer: !new:lightning.Trainer
+  limit_train_batches: null
+  max_epochs: 100
+  accelerator: gpu
+  devices: 1
+  accumulate_grad_batches: 1
+  gradient_clip_val: 2.
+  enable_progress_bar: True
+  enable_checkpointing: True
+  enable_model_summary: True
+  val_check_interval: 1000
+  logger:
+    - !ref <tb_logger>
+    - !ref <csv_logger>
+  strategy: !ref <strategy>
+  precision: 16-mixed
+  use_distributed_sampler: False
+  callbacks:
+    - !ref <checkpoint_callback>
+  num_sanity_val_steps: 50
+  log_every_n_steps: 50
