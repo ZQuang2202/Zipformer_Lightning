@@ -2,7 +2,7 @@ egs_name: zipformer
 version: 1
 resume_path: null
 
-text_extractor: !new:humming.features.text_extractor.SentencePiece
+text_extractor: !new:zipformer_lightning.features.text_extractor.SentencePiece
   vocab_path: #path to vocab file
 
 fbank_config: !new:lhotse.FbankConfig
@@ -37,7 +37,7 @@ spec_aug: !new:lhotse.dataset.SpecAugment
   max_frames_mask_fraction: 0.15
   p: 0.9
 
-train_dataset: !new:humming.dataset.asr_datamodule.ASRDataset
+train_dataset: !new:zipformer_lightning.dataset.asr_datamodule.ASRDataset
   data_path: #path to train_dataset in lhotse style
   enable_musan: False
   audio_extractor: !ref <audio_extractor>
@@ -49,19 +49,19 @@ train_dataset: !new:humming.dataset.asr_datamodule.ASRDataset
     - !ref <spec_aug>
   sample_rate: 16000
 
-valid_dataset: !new:humming.dataset.asr_datamodule.ASRDataset
+valid_dataset: !new:zipformer_lightning.dataset.asr_datamodule.ASRDataset
   data_path: #path to train_dataset in lhotse style
   audio_extractor: !ref <audio_extractor>
   text_extractor: !ref <text_extractor>
   sample_rate: 16000
 
-test_dataset: !new:humming.dataset.asr_datamodule.ASRDataset
+test_dataset: !new:zipformer_lightning.dataset.asr_datamodule.ASRDataset
   data_path: #path to train_dataset in lhotse style
   audio_extractor: !ref <audio_extractor>
   text_extractor: !ref <text_extractor>
   sample_rate: 16000
 
-datamodule: !new:humming.dataset.dataloader_module.Datamodule
+datamodule: !new:zipformer_lightning.dataset.dataloader_module.Datamodule
   train_dataset: !ref <train_dataset>
   valid_dataset: !ref <valid_dataset>
   test_dataset: !ref <test_dataset>
@@ -76,12 +76,12 @@ datamodule: !new:humming.dataset.dataloader_module.Datamodule
   use_bucket: True
 
 
-encoder_embed: !new:humming.layers.subsampling.Conv2dSubsampling
+encoder_embed: !new:zipformer_lightning.layers.subsampling.Conv2dSubsampling
   in_channels: 80
   out_channels: 192
   dropout: null
 
-encoder: !new:humming.layers.zipformer.Zipformer2
+encoder: !new:zipformer_lightning.layers.zipformer.Zipformer2
   output_downsampling_factor: 2
   downsampling_factor: (1,2,4,8,4,2)
   encoder_dim: (192,256,384,512,384,256)
@@ -100,19 +100,19 @@ encoder: !new:humming.layers.zipformer.Zipformer2
   chunk_size: (16,32,64,-1)
   left_context_frames: (64,128,256,-1)
 
-decoder: !new:humming.layers.decoder.Decoder
+decoder: !new:zipformer_lightning.layers.decoder.Decoder
   blank_id: 0
   vocab_size: !ref <text_extractor.vocab_size>
   decoder_dim: 512
   context_size: 2
 
-jointer: !new:humming.layers.jointer.Jointer
+jointer: !new:zipformer_lightning.layers.jointer.Jointer
   encoder_dim: 512
   decoder_dim: 512
   jointer_dim: 512
   vocab_size: !ref <decoder.vocab_size>
 
-model: !new:humming.models.rnnt.RNNT
+model: !new:zipformer_lightning.models.rnnt.RNNT
   encoder_embed: !ref <encoder_embed>
   encoder: !ref <encoder>
   decoder: !ref <decoder>
@@ -145,7 +145,7 @@ checkpoint_callback: !new:lightning.pytorch.callbacks.ModelCheckpoint
   save_top_k: 3
   monitor: avg_valid_loss
 
-process_bar: !new:humming.utils.process_bar.LitProgressBar
+process_bar: !new:zipformer_lightning.utils.process_bar.LitProgressBar
 
 simple_profiler: !new:lightning.pytorch.profilers.SimpleProfiler
   dirpath: !ref <egs_name>
