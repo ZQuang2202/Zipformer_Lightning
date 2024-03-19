@@ -38,6 +38,6 @@ Customize your configuration at the [config file](D:\DeepLearning\Zipformer_Ligh
 To train and test:
 ```bash
 cd egs/librispeech
-export CUDA_VISIBLE_DEVICES=0,1 python3 run.py --config configs/zipformer.yaml
+export CUDA_VISIBLE_DEVICES=0,1 & python3 run.py --config configs/zipformer.yaml
 ```
 
